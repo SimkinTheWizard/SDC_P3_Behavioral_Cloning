@@ -15,13 +15,16 @@ from sklearn.model_selection import train_test_split
 
 BATCH_SIZE = 32
 EPOCHS = 5
-
+DROPOUT = 0.5
 # pre provided data
 data_dir = "data/"
 # generated from simulation
 sim_data_dir = "sim_data/"
+# generated from simulation
+sim_data_2_dir = "sim_data_2/"
 # second simulation : driving from sides
 sim_data_sides_dir = "sim_data_s/"
+sim_data_sides_2_dir = "sim_data_s2/"
 # default_file_names
 log_file = "driving_log.csv"
 image_dir = data_dir + "IMG/"
@@ -44,10 +47,16 @@ def read_description_files():
     for line in get_file_names(data_dir):
         lines.append(line)
 
-    for line in get_file_names(sim_data_dir):
+    #for line in get_file_names(sim_data_dir):
+    #    lines.append(line)
+
+    for line in get_file_names(sim_data_2_dir):
         lines.append(line)
 
-    for line in get_file_names(sim_data_sides_dir):
+    #for line in get_file_names(sim_data_sides_dir):
+    #    lines.append(line)
+
+    for line in get_file_names(sim_data_sides_2_dir):
         lines.append(line)
 
     return lines
@@ -99,89 +108,59 @@ def initialize_model():
     # Preprocessing
     model.add(Cropping2D(cropping=((50,20), (0,0)), input_shape=(160,320,3)))
     model.add(Lambda(lambda x: (x / 255.0) - 0.5))
-    # Conv 1 6 *  5x5
-    model.add(Conv2D(16,5,5))
-    model.add(Dropout(0.5))
-    model.add(MaxPooling2D())
+    # Conv 1 16 *  5x5
+    model.add(Conv2D(16, 5, 5))
+    model.add(Dropout(DROPOUT))
+    model.add(MaxPooling2D((2, 2)))
+    model.add(Activation("relu"))   
+    
+    # Conv 2 24 *  5x5
+    model.add(Conv2D(24, 5, 5))
+    model.add(Dropout(DROPOUT))
+    model.add(MaxPooling2D((2, 2), border_mode="same"))
     model.add(Activation("relu"))
-    # Conv 2 12 *  5x5
-    model.add(Conv2D(24,5,5))
-    model.add(Dropout(0.5))
-    model.add(MaxPooling2D())
-    model.add(Activation("relu"))
+    
     # Conv 3 18 *  3x3
-    model.add(Conv2D(36,3,3))
-    model.add(Dropout(0.5))
-    model.add(MaxPooling2D())
-    model.add(Activation("relu"))
+    model.add(Conv2D(36, 5, 5))
+    #model.add(Dropout(0.5))
+    model.add(MaxPooling2D((2, 2), border_mode="same"))
+    model.add(Activation("relu"))  
+    
+   
+  
     # Conv 4 24 *  3x3
-    model.add(Conv2D(48,3,3))
-    model.add(Dropout(0.5))
+    model.add(Conv2D(64,3,3))
+    #model.add(Dropout(0.5))
     model.add(MaxPooling2D())
     model.add(Activation("relu"))
     # Conv 5 24 *  3x3
     model.add(Conv2D(64,3,3))
-    model.add(Dropout(0.5))
+    #model.add(Dropout(0.5))
     model.add(Activation("relu"))
     # Flatten
     model.add(Flatten())
     # Dense 1
-    model.add(Dense(100))
-    model.add(Dropout(0.2))
+    #model.add(Dense(1164))
+    model.add(Dense(500))
+    model.add(Dropout(DROPOUT))
     model.add(Activation("relu"))
     # Dense 2
-    model.add(Dense(50))
-    model.add(Dropout(0.2))
+    model.add(Dense(100))
+    model.add(Dropout(DROPOUT))
     model.add(Activation("relu"))
     # Dense 3
     model.add(Dense(50))
-    model.add(Dropout(0.2))
+    model.add(Dropout(DROPOUT))
+    model.add(Activation("relu"))
+    # Dense 4
+    model.add(Dense(50))
+    #model.add(Dropout(0.5))
     model.add(Activation("relu"))
     # Output
     model.add(Dense(1))
     model.compile(loss='mse',optimizer='adam')
     return model
 
-
-def NvidiaNet(input_shape):
-    """
-    Return a model consists of 5 conv layers and 4 full connected layers.
-    """
-    model = Sequential()
-
-    def preprocess(image):
-        return image/255 - 0.5
-    model.add(Cropping2D(cropping=((50,20), (0,0)), input_shape=input_shape))
-    model.add(Lambda(preprocess))
-
-    model.add(Conv2D(16, 5, 5))
-    model.add(Dropout(0.5))
-    model.add(MaxPooling2D((2, 2)))
-    model.add(Activation("relu"))
-
-    model.add(Conv2D(24, 5, 5))
-    model.add(MaxPooling2D((2, 2), border_mode="same"))
-    model.add(Activation("relu"))
-
-    model.add(Conv2D(36, 5, 5))
-    model.add(Dropout(0.5))
-    model.add(MaxPooling2D((2, 2), border_mode="same"))
-    model.add(Activation("relu"))
-
-    model.add(Conv2D(48, 3, 3))
-    model.add(MaxPooling2D((2, 2), border_mode="same"))
-    model.add(Activation("relu"))
-
-    model.add(Conv2D(64, 3, 3))
-    model.add(Activation("relu"))
-
-    model.add(Flatten())
-    model.add(Dense(100))
-    model.add(Dense(50))
-    model.add(Dense(10))
-    model.add(Dense(1))
-    model.compile(loss='mse',optimizer='adam')
-    return model
 
 def main():
 
@@ -192,10 +171,11 @@ def main():
     train_generator = generate_data(train_samples)
     validation_generator = generate_data(validation_samples)
 
-    #model = initialize_model()
-    model = NvidiaNet(input_shape=(160,320,3))
+    model = initialize_model()
 
-    model.fit_generator(train_generator, samples_per_epoch= len(train_samples), validation_data=validation_generator, nb_val_samples=len(validation_samples), nb_epoch=EPOCHS)
+    print(model.summary())
+    
+    model.fit_generator(train_generator, samples_per_epoch= len(train_samples)*2, validation_data=validation_generator, nb_val_samples=len(validation_samples)*2, nb_epoch=EPOCHS)
 
     model.save('model.h5')
 
