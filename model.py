@@ -2,9 +2,11 @@ import csv
 import cv2
 import numpy as np
 import gc
+import tensorflow as tf
 
 gc.collect()
 
+from keras.optimizers import Adam
 from keras.models import Sequential
 from keras.layers import Flatten,Dense, Conv2D, MaxPooling2D, Dropout, Activation
 from keras.layers import Lambda, Cropping2D
@@ -14,7 +16,7 @@ from sklearn.model_selection import train_test_split
 
 
 BATCH_SIZE = 32
-EPOCHS = 5
+EPOCHS = 4
 DROPOUT = 0.5
 # pre provided data
 data_dir = "data/"
@@ -25,6 +27,8 @@ sim_data_2_dir = "sim_data_2/"
 # second simulation : driving from sides
 sim_data_sides_dir = "sim_data_s/"
 sim_data_sides_2_dir = "sim_data_s2/"
+# re-take the relatively harder parts
+sim_data_harder_dir ="sim_data_harder/"
 # default_file_names
 log_file = "driving_log.csv"
 image_dir = data_dir + "IMG/"
@@ -57,6 +61,9 @@ def read_description_files():
     #    lines.append(line)
 
     for line in get_file_names(sim_data_sides_2_dir):
+        lines.append(line)
+
+    for line in get_file_names(sim_data_harder_dir):
         lines.append(line)
 
     return lines
@@ -109,21 +116,21 @@ def initialize_model():
     model.add(Cropping2D(cropping=((50,20), (0,0)), input_shape=(160,320,3)))
     model.add(Lambda(lambda x: (x / 255.0) - 0.5))
     # Conv 1 16 *  5x5
-    model.add(Conv2D(16, 5, 5))
+    model.add(Conv2D(16, (5, 5)))
     model.add(Dropout(DROPOUT))
     model.add(MaxPooling2D((2, 2)))
     model.add(Activation("relu"))   
     
     # Conv 2 24 *  5x5
-    model.add(Conv2D(24, 5, 5))
+    model.add(Conv2D(24, (5, 5)))
     model.add(Dropout(DROPOUT))
-    model.add(MaxPooling2D((2, 2), border_mode="same"))
+    model.add(MaxPooling2D((2, 2), padding="same"))
     model.add(Activation("relu"))
     
     # Conv 3 18 *  3x3
-    model.add(Conv2D(36, 5, 5))
+    model.add(Conv2D(36, (5, 5)))
     #model.add(Dropout(0.5))
-    model.add(MaxPooling2D((2, 2), border_mode="same"))
+    model.add(MaxPooling2D((2, 2), padding="same"))
     model.add(Activation("relu"))  
     
    
@@ -139,9 +146,10 @@ def initialize_model():
     model.add(Activation("relu"))
     # Flatten
     model.add(Flatten())
+
     # Dense 1
     #model.add(Dense(1164))
-    model.add(Dense(500))
+    #model.add(Dense(500))
     model.add(Dropout(DROPOUT))
     model.add(Activation("relu"))
     # Dense 2
@@ -158,7 +166,8 @@ def initialize_model():
     model.add(Activation("relu"))
     # Output
     model.add(Dense(1))
-    model.compile(loss='mse',optimizer='adam')
+    adam_optimizer = Adam(lr=0.0005)
+    model.compile(loss='mse',optimizer=adam_optimizer)
     return model
 
 
@@ -175,7 +184,8 @@ def main():
 
     print(model.summary())
     
-    model.fit_generator(train_generator, samples_per_epoch= len(train_samples)*2, validation_data=validation_generator, nb_val_samples=len(validation_samples)*2, nb_epoch=EPOCHS)
+    with tf.device('/gpu:0'):
+    	model.fit_generator(train_generator, steps_per_epoch=len(train_samples)*2/BATCH_SIZE , validation_data=validation_generator, nb_val_samples=len(validation_samples)*2, epochs=EPOCHS)
 
     model.save('model.h5')
 
