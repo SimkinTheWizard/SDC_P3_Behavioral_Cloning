@@ -17,7 +17,7 @@ from sklearn.model_selection import train_test_split
 
 BATCH_SIZE = 16
 EPOCHS = 30
-DROPOUT = 0.25
+DROPOUT = 0.3
 # pre provided data
 data_dir = "data/"
 # generated from simulation
@@ -49,6 +49,7 @@ def get_file_names(data_dir):
             lines.append(line)
     return lines
 
+# Read the file names and store them in a list
 def read_description_files():
     lines = []
     for line in get_file_names(data_dir):
@@ -158,8 +159,6 @@ def initialize_model():
     model.add(Flatten())
 
     # Dense 1
-    #model.add(Dense(1164))
-    #model.add(Dense(500))
     model.add(Dropout(DROPOUT))
     model.add(Activation("relu"))
     # Dense 2
@@ -195,10 +194,12 @@ def main():
     print(model.summary())
     
     with tf.device('/gpu:0'):
+    	# Keras 1.2
     	#model.fit_generator(train_generator, steps_per_epoch=len(train_samples)*2/BATCH_SIZE , validation_data=validation_generator, nb_val_samples=len(validation_samples)*2, epochs=EPOCHS)
+    	# Keras 2
     	model.fit_generator(train_generator, steps_per_epoch=len(train_samples)/BATCH_SIZE , validation_data=validation_generator, nb_val_samples=len(validation_samples)*2, epochs=EPOCHS)
 
-    model.save('model_65.h5')
+    model.save('model.h5')
 
 if __name__ == '__main__':
     main()
