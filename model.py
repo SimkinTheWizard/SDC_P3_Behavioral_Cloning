@@ -15,9 +15,9 @@ import sklearn
 from sklearn.model_selection import train_test_split
 
 
-BATCH_SIZE = 32
-EPOCHS = 4
-DROPOUT = 0.5
+BATCH_SIZE = 16
+EPOCHS = 30
+DROPOUT = 0.25
 # pre provided data
 data_dir = "data/"
 # generated from simulation
@@ -29,6 +29,9 @@ sim_data_sides_dir = "sim_data_s/"
 sim_data_sides_2_dir = "sim_data_s2/"
 # re-take the relatively harder parts
 sim_data_harder_dir ="sim_data_harder/"
+sim_data_larger_dir ="sim_data_large_angles/"
+sim_data_larger2_dir ="sim_data_large_angles2/"
+sim_data_larger3_dir ="sim_data_large_angles3/"
 # default_file_names
 log_file = "driving_log.csv"
 image_dir = data_dir + "IMG/"
@@ -51,21 +54,27 @@ def read_description_files():
     for line in get_file_names(data_dir):
         lines.append(line)
 
-    #for line in get_file_names(sim_data_dir):
-    #    lines.append(line)
+    for line in get_file_names(sim_data_dir):
+        lines.append(line)
 
     for line in get_file_names(sim_data_2_dir):
         lines.append(line)
 
-    #for line in get_file_names(sim_data_sides_dir):
-    #    lines.append(line)
+    for line in get_file_names(sim_data_sides_dir):
+        lines.append(line)
 
     for line in get_file_names(sim_data_sides_2_dir):
         lines.append(line)
 
     for line in get_file_names(sim_data_harder_dir):
         lines.append(line)
-
+    
+    for line in get_file_names(sim_data_larger_dir):
+        lines.append(line)
+    for line in get_file_names(sim_data_larger2_dir):
+        lines.append(line)
+    for line in get_file_names(sim_data_larger3_dir):
+        lines.append(line)
     return lines
 
 def get_relative_file_name(absolute_file_name):
@@ -106,7 +115,8 @@ def generate_data(lines,batch_size=BATCH_SIZE):
                 # TODO : append steering left and right images
                 X_val = np.array(center_images)
                 y_val = np.array(steering_measurements)
-                yield sklearn.utils.shuffle(X_val, y_val)
+                #yield sklearn.utils.shuffle(X_val, y_val)
+                yield X_val, y_val
 
 
 
@@ -166,7 +176,7 @@ def initialize_model():
     model.add(Activation("relu"))
     # Output
     model.add(Dense(1))
-    adam_optimizer = Adam(lr=0.0005)
+    adam_optimizer = Adam(lr=0.00005)
     model.compile(loss='mse',optimizer=adam_optimizer)
     return model
 
@@ -175,7 +185,7 @@ def main():
 
     lines = read_description_files()
     #train_samples, validation_samples = train_test_split(lines, test_size=0.2)
-    train_samples, validation_samples = train_test_split(sklearn.utils.shuffle(lines), test_size=0.2)
+    train_samples, validation_samples = train_test_split(sklearn.utils.shuffle(lines), test_size=0.3)
 
     train_generator = generate_data(train_samples)
     validation_generator = generate_data(validation_samples)
@@ -185,9 +195,10 @@ def main():
     print(model.summary())
     
     with tf.device('/gpu:0'):
-    	model.fit_generator(train_generator, steps_per_epoch=len(train_samples)*2/BATCH_SIZE , validation_data=validation_generator, nb_val_samples=len(validation_samples)*2, epochs=EPOCHS)
+    	#model.fit_generator(train_generator, steps_per_epoch=len(train_samples)*2/BATCH_SIZE , validation_data=validation_generator, nb_val_samples=len(validation_samples)*2, epochs=EPOCHS)
+    	model.fit_generator(train_generator, steps_per_epoch=len(train_samples)/BATCH_SIZE , validation_data=validation_generator, nb_val_samples=len(validation_samples)*2, epochs=EPOCHS)
 
-    model.save('model.h5')
+    model.save('model_65.h5')
 
 if __name__ == '__main__':
     main()
