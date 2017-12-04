@@ -16,8 +16,8 @@ The goals / steps of this project are the following:
 
 [//]: # (Image References)
 
-[image1]: ./examples/placeholder.png "Model Visualization"
-[image2]: ./examples/placeholder.png "Grayscaling"
+[image1]: ./output_images/borderless.jpg "Example Image"
+[image2]: ./output_images/stone_brige.jpg "Grayscaling"
 [image3]: ./examples/placeholder_small.png "Recovery Image"
 [image4]: ./examples/placeholder_small.png "Recovery Image"
 [image5]: ./examples/placeholder_small.png "Recovery Image"
@@ -37,6 +37,8 @@ My project includes the following files:
 * drive.py for driving the car in autonomous mode
 * model.h5 containing a trained convolution neural network 
 * writeup_report.md or writeup_report.pdf summarizing the results
+
+Also I uploaded the final video result. Here's a [link to my video result](./final_video.mp4)
 
 #### 2. Submission includes functional code
 Using the Udacity provided simulator and my drive.py file, the car can be driven autonomously around the track by executing 
@@ -158,28 +160,20 @@ The final model architecture (model.py lines 124-180) consisted of a convolution
 
 #### 3. Creation of the Training Set & Training Process
 
-To capture good driving behavior, I first recorded two laps on track one using center lane driving. Here is an example image of center lane driving:
+The most important part of the training process is the use of data. I fits began with the data provided a course material. I recorded two more laps of smooth diriving with precise angles. After that I added two more laps with recovering from sides.
 
+In order to generalize the learning, I augmented all of the data by inverting the picture and reversing the associated steering angle.
+
+After the training, I observed that training and validation accuracies were getting better, but the model was failing relatively different parts such as the stone bridge, and the parts of the road without boder. I drived a few more times around these regions and recorded the data. After that, the driving was much better.
+
+![alt text][image1]
 ![alt text][image2]
 
-I then recorded the vehicle recovering from the left side and right sides of the road back to center so that the vehicle would learn to .... These images show what a recovery looks like starting from ... :
 
-![alt text][image3]
-![alt text][image4]
-![alt text][image5]
+After some rounds of training, I noticed, although I trained a set of data points for recovering from the sides, the model was not able to produce large angles enough for recovering. Even though the accuracies were much better the model was not able to recover. I solved this by introducing more and noisy data. I captured the data with large angles by zig-zagging the car around de edges of the road. 
 
-Then I repeated this process on track two in order to get more data points.
+After I introduced the data the accuracies got worse, the car was travelling less smoothly. However it was now able to recover from the sides and able to go around large corners.   
 
-To augment the data sat, I also flipped images and angles thinking that this would ... For example, here is an image that has then been flipped:
+After the collection process, I had 60000 images and relative steering angles. I finally randomly shuffled the data set and put 30% of the data into a validation set. In order not to hold all of them in the memory, I only read the file names and loaded the images using generators batch-by-batch.
 
-![alt text][image6]
-![alt text][image7]
-
-Etc ....
-
-After the collection process, I had X number of data points. I then preprocessed this data by ...
-
-
-I finally randomly shuffled the data set and put Y% of the data into a validation set. 
-
-I used this training data for training the model. The validation set helped determine if the model was over or under fitting. The ideal number of epochs was Z as evidenced by ... I used an adam optimizer so that manually training the learning rate wasn't necessary.
+First, I trained the network for a few epochs. At first, the accuracies were swinging back and forth between epocsh. I first thought the network was overfitting, and tried early stopping the training. Later, I understood that this was about the learning rate. I trained the network for 30 epochs, and the car was able to complete a lap. However afer 15 epochs the training and the validation accuracies were not improving. This means that the optimum number of epochs to train this data with is about 15-20 epochs.
