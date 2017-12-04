@@ -16,8 +16,8 @@ The goals / steps of this project are the following:
 
 [//]: # (Image References)
 
-[image1]: ./output_images/borderless.jpg "Example Image"
-[image2]: ./output_images/stone_brige.jpg "Grayscaling"
+[image1]: ./output_images/borderless.jpg "Borderless Area"
+[image2]: ./output_images/stone_bridge.jpg "Stone Bridge"
 [image3]: ./examples/placeholder_small.png "Recovery Image"
 [image4]: ./examples/placeholder_small.png "Recovery Image"
 [image5]: ./examples/placeholder_small.png "Recovery Image"
